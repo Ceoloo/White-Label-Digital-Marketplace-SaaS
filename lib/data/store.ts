@@ -4,6 +4,7 @@ import type {
   Order,
   Product,
   SecurityEvent,
+  ServiceRequest,
   User,
 } from "@/config/types";
 import * as airtable from "./airtable";
@@ -13,6 +14,7 @@ import {
   mockOrders,
   mockProducts,
   mockSecurityEvents,
+  mockServiceRequests,
   mockUsers,
 } from "./mock";
 
@@ -37,6 +39,7 @@ const useAirtable = airtable.isAirtableConfigured();
 interface MutableState {
   products: Product[];
   orders: Order[];
+  serviceRequests: ServiceRequest[];
 }
 const globalForStore = globalThis as unknown as { __wlStore?: MutableState };
 const state: MutableState =
@@ -44,6 +47,7 @@ const state: MutableState =
   (globalForStore.__wlStore = {
     products: [...mockProducts],
     orders: [...mockOrders],
+    serviceRequests: [...mockServiceRequests],
   });
 
 // -- Products -----------------------------------------------------------------
@@ -200,6 +204,44 @@ export async function saveOrder(order: Order): Promise<void> {
       // Best effort — the order is still tracked in-memory for the session.
     }
   }
+}
+
+// -- AI service requests ------------------------------------------------------
+
+export async function createServiceRequest(
+  request: ServiceRequest,
+): Promise<ServiceRequest> {
+  state.serviceRequests.unshift(request);
+  return request;
+}
+
+export async function getServiceRequestById(
+  id: string,
+): Promise<ServiceRequest | null> {
+  return state.serviceRequests.find((r) => r.id === id) ?? null;
+}
+
+export async function getServiceRequestsForEmail(
+  email: string,
+): Promise<ServiceRequest[]> {
+  return state.serviceRequests.filter(
+    (r) => r.customerEmail.toLowerCase() === email.toLowerCase(),
+  );
+}
+
+export async function getServiceRequests(): Promise<ServiceRequest[]> {
+  return state.serviceRequests;
+}
+
+export async function updateServiceRequest(
+  id: string,
+  patch: Partial<ServiceRequest>,
+): Promise<ServiceRequest | null> {
+  const idx = state.serviceRequests.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const updated = { ...state.serviceRequests[idx], ...patch };
+  state.serviceRequests[idx] = updated;
+  return updated;
 }
 
 // -- Privacy / security telemetry --------------------------------------------

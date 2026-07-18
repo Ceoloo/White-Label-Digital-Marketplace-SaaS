@@ -4,6 +4,7 @@ import type {
   Order,
   Product,
   SecurityEvent,
+  ServiceRequest,
   User,
 } from "@/config/types";
 
@@ -16,7 +17,7 @@ import type {
  * "place order" behave realistically in the demo. They reset on restart.
  */
 
-export const mockProducts: Product[] = [
+const seedDigitalProducts: Omit<Product, "type" | "service">[] = [
   {
     id: "prod_starter_kit",
     slug: "founders-starter-kit",
@@ -153,6 +154,71 @@ export const mockProducts: Product[] = [
     createdAt: "2026-05-10T10:00:00.000Z",
   },
 ];
+
+/** A demo AI-fulfilled service the admin can sell out of the box. */
+const seedServices: Product[] = [
+  {
+    id: "svc_landing_copy",
+    slug: "ai-landing-page-copywriter",
+    name: "AI Landing Page Copywriter",
+    description:
+      "Tell us about your product and audience, and our AI writes conversion-focused landing page copy — headline, subhead, benefits, and CTA.",
+    features: [
+      "Delivered by AI within minutes",
+      "Headline, subhead, 3 benefits, and CTA",
+      "Tailored to your audience & tone",
+      "Unlimited edits to your brief",
+    ],
+    requirements: ["A short description of your product"],
+    price: 25,
+    images: [],
+    videoUrl: "",
+    category: "Software",
+    visibility: "public",
+    inventory: -1,
+    rating: 4.9,
+    reviewCount: 37,
+    createdAt: "2026-06-01T10:00:00.000Z",
+    type: "service",
+    service: {
+      instructions:
+        "Write high-converting landing page copy for the product described below. Return: a punchy headline, a one-sentence subheadline, three benefit bullets, and a strong call-to-action. Match the requested tone. Format the result as clean Markdown.",
+      deliveryFormat: "Markdown copy block",
+      inputs: [
+        {
+          id: "f1_product",
+          label: "What is your product or service?",
+          placeholder: "e.g. A budgeting app for freelancers",
+          multiline: true,
+          required: true,
+        },
+        {
+          id: "f2_audience",
+          label: "Who is your target audience?",
+          placeholder: "e.g. Freelancers and solo founders",
+          multiline: true,
+          required: true,
+        },
+        {
+          id: "f3_tone",
+          label: "What tone should the copy have?",
+          placeholder: "e.g. Confident and friendly",
+          multiline: false,
+          required: false,
+        },
+      ],
+    },
+  },
+];
+
+export const mockProducts: Product[] = [
+  ...seedDigitalProducts.map(
+    (p): Product => ({ ...p, type: "digital" as const }),
+  ),
+  ...seedServices,
+];
+
+export const mockServiceRequests: ServiceRequest[] = [];
 
 export const mockUsers: User[] = [
   {

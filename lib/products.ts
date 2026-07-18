@@ -1,4 +1,10 @@
-import type { Product, ProductVisibility } from "@/config/types";
+import type {
+  Product,
+  ProductType,
+  ProductVisibility,
+  ServiceConfig,
+  ServiceInput,
+} from "@/config/types";
 import { slugify } from "@/lib/utils";
 
 /**
@@ -23,9 +29,18 @@ export interface ProductInput {
   images?: string[];
   features?: string[];
   requirements?: string[];
+  // AI-service fields (used when type === "service").
+  type?: ProductType;
+  /** What the AI should produce. */
+  serviceInstructions?: string;
+  /** Customer input field labels, one per line (or an array of labels). */
+  serviceInputs?: string[] | string;
+  serviceSystemPrompt?: string;
+  serviceDeliveryFormat?: string;
 }
 
 const VISIBILITIES: ProductVisibility[] = ["public", "hidden", "draft"];
+const TYPES: ProductType[] = ["digital", "service"];
 
 export interface ValidationResult {
   valid: boolean;
@@ -67,8 +82,32 @@ export function validateProductInput(
   if (input.visibility != null && !VISIBILITIES.includes(input.visibility)) {
     errors.push(`Visibility must be one of: ${VISIBILITIES.join(", ")}.`);
   }
+  if (input.type != null && !TYPES.includes(input.type)) {
+    errors.push(`Type must be one of: ${TYPES.join(", ")}.`);
+  }
+  if (input.type === "service") {
+    if (!input.serviceInstructions || !input.serviceInstructions.trim()) {
+      errors.push("AI service instructions are required for a service.");
+    }
+  }
 
   return { valid: errors.length === 0, errors };
+}
+
+/** Build a ServiceConfig from the flat admin input fields. */
+function buildServiceConfig(input: Partial<ProductInput>): ServiceConfig {
+  const inputs: ServiceInput[] = toList(input.serviceInputs).map((label, i) => ({
+    id: `f${i + 1}_${slugify(label).slice(0, 20) || "field"}`,
+    label,
+    multiline: true,
+    required: true,
+  }));
+  return {
+    inputs,
+    instructions: (input.serviceInstructions ?? "").trim(),
+    systemPrompt: input.serviceSystemPrompt?.trim() || undefined,
+    deliveryFormat: input.serviceDeliveryFormat?.trim() || undefined,
+  };
 }
 
 /** Normalize free-form list input (array or newline string) to a clean array. */
@@ -111,6 +150,8 @@ export function buildNewProduct(input: ProductInput): Product {
     rating: 0,
     reviewCount: 0,
     createdAt: new Date().toISOString(),
+    type: input.type ?? "digital",
+    service: input.type === "service" ? buildServiceConfig(input) : undefined,
   };
 }
 
@@ -142,5 +183,37 @@ export function mergeProduct(existing: Product, patch: Partial<ProductInput>): P
       patch.downloadUrl !== undefined ? patch.downloadUrl.trim() || undefined : existing.downloadUrl,
     visibility: patch.visibility ?? existing.visibility,
     inventory: patch.inventory != null ? patch.inventory : existing.inventory,
+    type: patch.type ?? existing.type,
+    service:
+      (patch.type ?? existing.type) === "service"
+        ? mergeServiceConfig(existing.service, patch)
+        : undefined,
+  };
+}
+
+/** Merge service-config fields from a patch onto an existing config. */
+function mergeServiceConfig(
+  existing: ServiceConfig | undefined,
+  patch: Partial<ProductInput>,
+): ServiceConfig {
+  const base: ServiceConfig = existing ?? { inputs: [], instructions: "" };
+  return {
+    inputs:
+      patch.serviceInputs !== undefined
+        ? buildServiceConfig(patch).inputs
+        : base.inputs,
+    instructions:
+      patch.serviceInstructions !== undefined
+        ? patch.serviceInstructions.trim()
+        : base.instructions,
+    systemPrompt:
+      patch.serviceSystemPrompt !== undefined
+        ? patch.serviceSystemPrompt.trim() || undefined
+        : base.systemPrompt,
+    deliveryFormat:
+      patch.serviceDeliveryFormat !== undefined
+        ? patch.serviceDeliveryFormat.trim() || undefined
+        : base.deliveryFormat,
+    model: base.model,
   };
 }

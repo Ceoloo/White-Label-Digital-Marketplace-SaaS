@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import type { Order, OrderItem, PaymentMethodId } from "@/config/types";
+import type {
+  Order,
+  OrderItem,
+  PaymentMethodId,
+  ServiceRequest,
+} from "@/config/types";
 import marketplaceConfig from "@/config/marketplace.config";
 import {
+  createServiceRequest,
   decrementInventory,
   getCouponByCode,
   getProductById,
@@ -136,9 +142,29 @@ export async function POST(req: Request) {
 
   await saveOrder(order);
 
-  // Draw down finite inventory for the purchased items.
+  // Draw down finite inventory, and spin up an AI service request for each
+  // purchased service unit (the buyer completes it from "My AI services").
+  let serviceRequestsCreated = 0;
   for (const item of orderItems) {
     await decrementInventory(item.productId, item.quantity);
+    const product = await getProductById(item.productId);
+    if (product?.type === "service") {
+      for (let i = 0; i < item.quantity; i++) {
+        const request: ServiceRequest = {
+          id: `svcreq_${Date.now().toString(36)}_${serviceRequestsCreated}`,
+          serviceId: product.id,
+          serviceName: product.name,
+          orderId: order.id,
+          customerEmail: email,
+          customerName: name,
+          inputs: {},
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        };
+        await createServiceRequest(request);
+        serviceRequestsCreated++;
+      }
+    }
   }
 
   const xpEarned = marketplaceConfig.rewards.enabled
@@ -155,6 +181,7 @@ export async function POST(req: Request) {
       deliveryStatus: order.deliveryStatus,
       couponCode: appliedCode,
       isFirstPurchase,
+      serviceRequestsCreated,
     },
     instruction,
     xpEarned,

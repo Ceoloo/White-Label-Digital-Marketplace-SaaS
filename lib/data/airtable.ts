@@ -74,6 +74,9 @@ function toProduct(rec: AirtableRecord<Record<string, unknown>>): Product {
     rating: Number(f["Rating"] ?? 0),
     reviewCount: Number(f["Review Count"] ?? 0),
     createdAt: rec.createdTime,
+    // Airtable base treats all rows as digital products by default; manage
+    // AI-service configs through the app's in-memory layer for the MVP.
+    type: "digital",
   };
 }
 

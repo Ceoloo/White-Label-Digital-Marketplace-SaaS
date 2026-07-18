@@ -32,6 +32,11 @@ interface FormState {
   images: string;
   features: string;
   requirements: string;
+  type: Product["type"];
+  serviceInstructions: string;
+  serviceInputs: string;
+  serviceSystemPrompt: string;
+  serviceDeliveryFormat: string;
 }
 
 function emptyForm(defaultCategory: string): FormState {
@@ -49,6 +54,11 @@ function emptyForm(defaultCategory: string): FormState {
     images: "",
     features: "",
     requirements: "",
+    type: "digital",
+    serviceInstructions: "",
+    serviceInputs: "",
+    serviceSystemPrompt: "",
+    serviceDeliveryFormat: "",
   };
 }
 
@@ -68,6 +78,11 @@ function formFromProduct(p: Product): FormState {
     images: p.images.join("\n"),
     features: p.features.join("\n"),
     requirements: p.requirements.join("\n"),
+    type: p.type,
+    serviceInstructions: p.service?.instructions ?? "",
+    serviceInputs: (p.service?.inputs ?? []).map((f) => f.label).join("\n"),
+    serviceSystemPrompt: p.service?.systemPrompt ?? "",
+    serviceDeliveryFormat: p.service?.deliveryFormat ?? "",
   };
 }
 
@@ -146,6 +161,11 @@ export function AdminProductsManager({
         images: form.images,
         features: form.features,
         requirements: form.requirements,
+        type: form.type,
+        serviceInstructions: form.serviceInstructions,
+        serviceInputs: form.serviceInputs,
+        serviceSystemPrompt: form.serviceSystemPrompt,
+        serviceDeliveryFormat: form.serviceDeliveryFormat,
       };
       const res = await fetch(
         form.id ? `/api/admin/products/${form.id}` : "/api/admin/products",
@@ -234,6 +254,11 @@ export function AdminProductsManager({
                     >
                       {p.name}
                     </Link>
+                    {p.type === "service" && (
+                      <Badge variant="secondary" className="ml-2">
+                        AI service
+                      </Badge>
+                    )}
                     <div className="text-xs text-muted-foreground">/{p.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{p.category}</td>
@@ -386,6 +411,62 @@ function ProductFormModal({
               onChange={(e) => set({ description: e.target.value })}
             />
           </Field>
+
+          <Field label="Product type">
+            <Select
+              value={form.type}
+              onChange={(e) =>
+                set({ type: e.target.value as Product["type"] })
+              }
+            >
+              <option value="digital">Digital download</option>
+              <option value="service">AI-fulfilled service</option>
+            </Select>
+          </Field>
+
+          {form.type === "service" && (
+            <div className="space-y-4 rounded-md border border-primary/30 bg-primary/5 p-4">
+              <p className="text-sm font-medium">AI service configuration</p>
+              <Field label="AI instructions (what to produce)" required>
+                <Textarea
+                  rows={4}
+                  value={form.serviceInstructions}
+                  placeholder="e.g. Write conversion-focused landing page copy for the product described below…"
+                  onChange={(e) =>
+                    set({ serviceInstructions: e.target.value })
+                  }
+                />
+              </Field>
+              <Field label="Customer input fields (one label per line)">
+                <Textarea
+                  rows={3}
+                  value={form.serviceInputs}
+                  placeholder={"What is your product?\nWho is your audience?"}
+                  onChange={(e) => set({ serviceInputs: e.target.value })}
+                />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Delivery format (optional)">
+                  <Input
+                    value={form.serviceDeliveryFormat}
+                    placeholder="e.g. Markdown copy block"
+                    onChange={(e) =>
+                      set({ serviceDeliveryFormat: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="System prompt (optional)">
+                  <Input
+                    value={form.serviceSystemPrompt}
+                    placeholder="Overrides the default AI persona"
+                    onChange={(e) =>
+                      set({ serviceSystemPrompt: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Category">

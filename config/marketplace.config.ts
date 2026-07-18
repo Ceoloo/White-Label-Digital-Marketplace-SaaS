@@ -34,6 +34,7 @@ export const marketplaceConfig: MarketplaceConfig = {
     { label: "Marketplace", href: "/marketplace" },
     { label: "Rewards", href: "/rewards" },
     { label: "Downloads", href: "/downloads" },
+    { label: "My Services", href: "/services" },
     { label: "AI Services", href: "/ai-services" },
     { label: "Privacy", href: "/privacy" },
     { label: "Support", href: "/support" },

@@ -192,6 +192,34 @@ export interface MarketplaceConfig {
 
 export type ProductVisibility = "public" | "hidden" | "draft";
 
+/** A digital download vs. an AI-fulfilled service. */
+export type ProductType = "digital" | "service";
+
+/** One input field a customer fills in when requesting an AI service. */
+export interface ServiceInput {
+  id: string;
+  label: string;
+  placeholder?: string;
+  /** Single-line vs. multi-line input. */
+  multiline?: boolean;
+  required?: boolean;
+}
+
+/**
+ * Configuration for an AI-fulfilled service. When a `service`-type product is
+ * purchased, the buyer provides these inputs and the AI produces the deliverable
+ * per `instructions`. `systemPrompt` and `model` are optional overrides.
+ */
+export interface ServiceConfig {
+  inputs: ServiceInput[];
+  /** What the AI should produce (the task/prompt template). */
+  instructions: string;
+  systemPrompt?: string;
+  model?: string;
+  /** Short description of the output format shown to the buyer. */
+  deliveryFormat?: string;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -211,6 +239,35 @@ export interface Product {
   rating: number;
   reviewCount: number;
   createdAt: string;
+  /** "digital" (a download) or "service" (fulfilled by AI). Defaults to digital. */
+  type: ProductType;
+  /** Present when `type === "service"`. */
+  service?: ServiceConfig;
+}
+
+export type ServiceRequestStatus =
+  | "pending" // purchased, awaiting customer inputs
+  | "processing" // AI is generating
+  | "completed"
+  | "failed";
+
+/** A purchased instance of a service being fulfilled by AI. */
+export interface ServiceRequest {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  orderId: string;
+  customerEmail: string;
+  customerName: string;
+  inputs: Record<string, string>;
+  status: ServiceRequestStatus;
+  /** The AI-generated deliverable (present once completed). */
+  deliverable?: string;
+  /** Model that produced it, or "simulated" in demo mode. */
+  fulfilledBy?: string;
+  error?: string;
+  createdAt: string;
+  completedAt?: string;
 }
 
 export type MembershipTier = "Bronze" | "Silver" | "Gold" | "Diamond" | "Founder";

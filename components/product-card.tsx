@@ -18,6 +18,7 @@ export function ProductCard({ product }: { product: Product }) {
     : 0;
   const soldOut = product.inventory === 0;
   const lowStock = product.inventory > 0 && product.inventory <= 5;
+  const isService = product.type === "service";
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md">
@@ -50,7 +51,10 @@ export function ProductCard({ product }: { product: Product }) {
 
       <div className="flex flex-1 flex-col p-4">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <Badge variant="muted">{product.category}</Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge variant="muted">{product.category}</Badge>
+            {isService && <Badge variant="secondary">AI service</Badge>}
+          </div>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Star className="size-3.5 fill-current text-amber-400" />
             {product.rating.toFixed(1)}

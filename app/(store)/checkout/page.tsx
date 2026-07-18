@@ -21,6 +21,7 @@ interface CheckoutResult {
     deliveryStatus: string;
     couponCode?: string;
     isFirstPurchase: boolean;
+    serviceRequestsCreated?: number;
   };
   instruction: {
     method: PaymentMethodId;
@@ -155,10 +156,26 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {result.order.serviceRequestsCreated
+            ? (
+                <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
+                  Your purchase includes an AI-fulfilled service. Head to{" "}
+                  <span className="font-medium text-foreground">My AI services</span>{" "}
+                  to provide details and generate your deliverable.
+                </p>
+              )
+            : null}
+
           <div className="mt-8 flex justify-center gap-3">
-            <Link href="/downloads" className={cn(buttonVariants())}>
-              Go to downloads
-            </Link>
+            {result.order.serviceRequestsCreated ? (
+              <Link href="/services" className={cn(buttonVariants())}>
+                Go to My AI services
+              </Link>
+            ) : (
+              <Link href="/downloads" className={cn(buttonVariants())}>
+                Go to downloads
+              </Link>
+            )}
             <Link
               href="/marketplace"
               className={cn(buttonVariants({ variant: "outline" }))}
