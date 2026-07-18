@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Globe, Lock, Network, ShieldCheck } from "lucide-react";
 import marketplaceConfig from "@/config/marketplace.config";
-import { getPrivacyStatus } from "@/lib/privacy";
+import { getOnionUrl, getPrivacyStatus } from "@/lib/privacy";
 import { getSecurityEvents } from "@/lib/data/store";
 import { formatDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,7 @@ export default async function AdminPrivacyPage() {
   if (!marketplaceConfig.features.privacy) notFound();
 
   const status = getPrivacyStatus();
+  const onionUrl = getOnionUrl();
   const events = await getSecurityEvents();
 
   return (
@@ -106,6 +107,35 @@ export default async function AdminPrivacyPage() {
           ))}
         </div>
       </section>
+
+      {/* Tor hidden service */}
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Globe className="size-5" />
+            </div>
+            <div>
+              <div className="font-semibold">Tor hidden service (.onion)</div>
+              <p className="max-w-xl text-sm text-muted-foreground">
+                When set, the app sends an <code className="rounded bg-muted px-1 py-0.5">Onion-Location</code>{" "}
+                header + meta tag so Tor Browser users are offered the .onion. Run
+                the hidden service yourself and set{" "}
+                <code className="rounded bg-muted px-1 py-0.5">ONION_URL</code>.
+                Nothing Tor-related is bundled.
+              </p>
+              {onionUrl && (
+                <code className="mt-2 inline-block max-w-full truncate rounded bg-muted px-2 py-1 text-xs font-medium">
+                  {onionUrl.replace(/^https?:\/\//, "")}
+                </code>
+              )}
+            </div>
+          </div>
+          <Badge variant={onionUrl ? "success" : "muted"}>
+            {onionUrl ? "Advertised" : "Not configured"}
+          </Badge>
+        </CardContent>
+      </Card>
 
       {/* Compliance + encryption */}
       <div className="grid gap-6 lg:grid-cols-2">

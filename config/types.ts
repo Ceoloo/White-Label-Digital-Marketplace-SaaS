@@ -143,6 +143,18 @@ export interface PrivacyConfig {
     /** Idle session timeout (minutes) before re-authentication. */
     sessionTimeoutMinutes: number;
   };
+  /**
+   * Tor hidden-service (.onion) support. When advertised, the app sends an
+   * `Onion-Location` header + meta tag so Tor Browser users are offered the
+   * .onion address. The app does NOT run Tor — the operator runs the hidden
+   * service and supplies its address (usually via the ONION_URL env var).
+   */
+  tor: {
+    /** Advertise the hidden service to Tor Browser users. */
+    advertiseOnion: boolean;
+    /** Default v3 .onion address; usually supplied via ONION_URL instead. */
+    onionUrl: string;
+  };
 }
 
 export interface MarketplaceConfig {

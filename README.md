@@ -214,6 +214,32 @@ How it's wired:
 This keeps privacy/egress a **deployment and compliance decision**, configured
 by administrators, rather than a capability hardcoded into the application.
 
+### Tor support for end users (.onion hidden service)
+
+A web app **cannot** route a visitor's browser traffic through Tor or a VPN —
+the browser connects to the server directly. The correct, standard way to give
+end users Tor-level privacy is to publish a **Tor hidden service** and let users
+reach it with their own Tor Browser. This app supports that:
+
+- Run the hidden service yourself (a `tor` daemon with a `HiddenServiceDir`
+  pointing at the app) and set `ONION_URL` to its v3 `.onion` address. Nothing
+  Tor-related is bundled or executed by the app.
+- [`middleware.ts`](middleware.ts) then sends an **`Onion-Location`** response
+  header (validated as a v3 onion, read at request time so no rebuild is
+  needed). Tor Browser reads this header and offers/redirects the visitor to the
+  `.onion`. A matching `<meta http-equiv="onion-location">` is emitted as a
+  fallback.
+- The address is surfaced in the footer ("Also available over Tor") and on the
+  `/privacy` dashboard, and its status shows in `/admin/privacy`.
+- When a visitor is already on the `.onion` host, the header is not re-sent.
+
+Over the hidden service, traffic is end-to-end encrypted through the Tor network
+and neither side needs to reveal its IP — which is the real, honest version of
+"anonymity from outside threats." For protection against public attacks (DDoS,
+scraping, brute force), put the clearnet origin behind a CDN/WAF and add rate
+limiting at the edge — a deployment concern that complements this app-level
+support.
+
 ---
 
 ## Environment variables
@@ -229,6 +255,7 @@ local development. Groups:
 - **Zelle** — `ZELLE_RECIPIENT_NAME` / `_EMAIL` / `_PHONE`
 - **Privacy egress** — `PRIVACY_VPN_PROXY_URL` / `PRIVACY_TOR_PROXY_URL` /
   `PRIVACY_HTTP_PROXY_URL` (approved endpoints you operate)
+- **Tor hidden service** — `ONION_URL` (your v3 `.onion` address)
 
 ---
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   Fingerprint,
+  Globe,
   Laptop,
   Lock,
   ShieldCheck,
@@ -15,7 +16,7 @@ import {
   getDeviceSessionsForEmail,
   getSecurityEventsForEmail,
 } from "@/lib/data/store";
-import { getPrivacyStatus, maskSensitive } from "@/lib/privacy";
+import { getOnionUrl, getPrivacyStatus, maskSensitive } from "@/lib/privacy";
 import { cn, formatDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ export default async function PrivacyDashboardPage() {
   if (!marketplaceConfig.features.privacy) notFound();
 
   const status = getPrivacyStatus();
+  const onionUrl = getOnionUrl();
   const user = await getCurrentUser();
   const events = user ? await getSecurityEventsForEmail(user.email) : [];
   const devices = user ? await getDeviceSessionsForEmail(user.email) : [];
@@ -61,6 +63,27 @@ export default async function PrivacyDashboardPage() {
           meet their compliance requirements.
         </p>
       </header>
+
+      {/* Tor hidden service */}
+      {onionUrl && (
+        <div className="mb-8 flex flex-col gap-3 rounded-lg border bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <Globe className="size-5" />
+            </div>
+            <div>
+              <div className="font-semibold">Reach us privately over Tor</div>
+              <p className="text-sm text-muted-foreground">
+                Prefer to browse anonymously? Open our hidden service in Tor
+                Browser. Your visit stays private end-to-end via the Tor network.
+              </p>
+            </div>
+          </div>
+          <code className="max-w-full shrink-0 truncate rounded-md border bg-background px-3 py-2 text-sm font-medium">
+            {onionUrl.replace(/^https?:\/\//, "")}
+          </code>
+        </div>
+      )}
 
       {/* Top status tiles */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

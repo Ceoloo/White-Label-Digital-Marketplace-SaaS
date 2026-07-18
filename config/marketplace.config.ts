@@ -188,6 +188,12 @@ export const marketplaceConfig: MarketplaceConfig = {
       requireAdminApproval: true,
       sessionTimeoutMinutes: 30,
     },
+    tor: {
+      // Offer a .onion to Tor Browser users when an address is configured.
+      // Supply the address via the ONION_URL env var (kept out of source).
+      advertiseOnion: true,
+      onionUrl: "",
+    },
   },
 
   features: {

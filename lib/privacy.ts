@@ -124,6 +124,37 @@ export async function outboundFetch(
   return fetch(input, init);
 }
 
+// -----------------------------------------------------------------------------
+// Tor hidden-service (.onion) support
+// -----------------------------------------------------------------------------
+
+/** Extract the host from a possibly-schemed URL string. */
+function hostOf(value: string): string {
+  return value
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .split("/")[0]
+    .toLowerCase();
+}
+
+/** Validate a Tor v3 onion address (56 base32 chars + ".onion"). */
+export function isValidOnion(value: string): boolean {
+  return /^[a-z2-7]{56}\.onion$/.test(hostOf(value));
+}
+
+/**
+ * The advertised .onion address, normalized to a full URL, or null. Reads the
+ * ONION_URL env var (runtime-configurable) and falls back to the config value.
+ * Returns null unless advertising is enabled and the address is a valid v3
+ * onion, so a malformed value is never surfaced to users.
+ */
+export function getOnionUrl(): string | null {
+  if (!privacy.tor.advertiseOnion) return null;
+  const raw = (process.env.ONION_URL || privacy.tor.onionUrl || "").trim();
+  if (!raw || !isValidOnion(raw)) return null;
+  return /^https?:\/\//i.test(raw) ? raw : `http://${hostOf(raw)}`;
+}
+
 /** Mask a sensitive value for display in the Sensitive Data Vault. */
 export function maskSensitive(value: string, visible = 4): string {
   if (!value) return "";

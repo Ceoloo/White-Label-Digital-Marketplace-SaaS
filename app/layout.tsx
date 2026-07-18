@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import marketplaceConfig from "@/config/marketplace.config";
+import { getOnionUrl } from "@/lib/privacy";
 import { Providers } from "./providers";
 
 const { brand } = marketplaceConfig;
@@ -39,10 +40,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const onionUrl = getOnionUrl();
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <BrandStyle />
+        {/* Fallback to the Onion-Location header: lets Tor Browser discover the
+            hidden service even when the header is stripped by a proxy. */}
+        {onionUrl && <meta httpEquiv="onion-location" content={onionUrl} />}
       </head>
       <body>
         <Providers>{children}</Providers>

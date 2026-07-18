@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { Globe } from "lucide-react";
 import marketplaceConfig from "@/config/marketplace.config";
 import { dataSource } from "@/lib/data/store";
+import { getOnionUrl } from "@/lib/privacy";
 
 export function SiteFooter() {
   const { brand, nav, legal } = marketplaceConfig;
   const year = new Date().getFullYear();
+  const onionUrl = getOnionUrl();
 
   return (
     <footer className="border-t bg-muted/30">
@@ -90,6 +93,18 @@ export function SiteFooter() {
             <span className="font-medium text-foreground">{dataSource()}</span>
           </p>
         </div>
+
+        {onionUrl && (
+          <div className="border-t">
+            <div className="container flex flex-col items-center justify-center gap-1.5 py-4 text-xs text-muted-foreground sm:flex-row">
+              <Globe className="size-3.5" />
+              <span>Also available over Tor:</span>
+              <code className="max-w-full truncate rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                {onionUrl.replace(/^https?:\/\//, "")}
+              </code>
+            </div>
+          </div>
+        )}
       </div>
     </footer>
   );
