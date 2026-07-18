@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Check, Download, Loader2, Sparkles } from "lucide-react";
+import { Check, Download, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import type { ServiceInput, ServiceRequest } from "@/config/types";
+import type { AiStatus } from "@/lib/ai";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,18 +28,28 @@ const statusVariant: Record<
 
 export function MyServices({
   entries,
-  aiConfigured,
+  ai,
 }: {
   entries: ServiceEntry[];
-  aiConfigured: boolean;
+  ai: AiStatus;
 }) {
   return (
     <div className="space-y-6">
-      {!aiConfigured && (
+      {ai.provider === "none" ? (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Demo mode:</span> no{" "}
-          <code>ANTHROPIC_API_KEY</code> is set, so deliverables are simulated.
-          Add a key to fulfill these with Claude for real.
+          <span className="font-medium text-foreground">Demo mode:</span> no
+          model is configured, so deliverables are simulated. Configure a private
+          local model or Anthropic to fulfill these for real.
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+          <ShieldCheck className="size-4 text-primary" />
+          <span>
+            Fulfilled by{" "}
+            <span className="font-medium text-foreground">{ai.label}</span>
+            {ai.privateLocal && " — your data stays on the operator's infrastructure"}
+            .
+          </span>
         </div>
       )}
       {entries.map((entry) => (

@@ -7,6 +7,7 @@ import {
   getProductById,
   getServiceRequestsForEmail,
 } from "@/lib/data/store";
+import { aiStatus } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { MyServices, type ServiceEntry } from "@/components/my-services";
@@ -62,10 +63,7 @@ export default async function MyServicesPage() {
           </Link>
         </div>
       ) : (
-        <MyServices
-          entries={entries}
-          aiConfigured={Boolean(process.env.ANTHROPIC_API_KEY)}
-        />
+        <MyServices entries={entries} ai={aiStatus()} />
       )}
     </div>
   );

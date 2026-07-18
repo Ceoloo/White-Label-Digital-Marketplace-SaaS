@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Eye, X } from "lucide-react";
+import { Cpu, Eye, X } from "lucide-react";
 import type { ServiceRequest, ServiceRequestStatus } from "@/config/types";
+import type { AiStatus } from "@/lib/ai";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,10 @@ const statusVariant: Record<
 
 export function AdminServiceRequests({
   requests,
+  ai,
 }: {
   requests: ServiceRequest[];
+  ai: AiStatus;
 }) {
   const [viewing, setViewing] = React.useState<ServiceRequest | null>(null);
 
@@ -33,11 +36,21 @@ export function AdminServiceRequests({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">AI service requests</h1>
-        <p className="text-sm text-muted-foreground">
-          Every purchased AI service and its fulfillment status.
-        </p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            AI service requests
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Every purchased AI service and its fulfillment status.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+          <Cpu className="size-4 text-primary" />
+          <span className="text-muted-foreground">Provider:</span>
+          <span className="font-medium">{ai.label}</span>
+          {ai.privateLocal && <Badge variant="success">Private / local</Badge>}
+        </div>
       </div>
 
       {/* Counters */}
