@@ -57,7 +57,6 @@ export function evaluateBadges(
   opts: { orderCount: number; referralCount: number; memberNumber?: number },
 ): EarnedBadge[] {
   const xp = user.rewardPoints;
-  const tier = tierForXp(xp);
   const gate: Record<string, boolean> = {
     "first-purchase": opts.orderCount >= 1,
     "top-supporter": user.lifetimeSpend >= 500,
