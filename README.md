@@ -180,6 +180,42 @@ than bundling specific tools; see `/ai-services` and the config's `aiServices`.
 
 ---
 
+## Privacy Suite (configurable egress, not bundled)
+
+The Privacy Suite follows the same principle: **nothing is bundled**. The app
+does not ship a VPN client or a Tor binary, and it never anonymizes end-user
+browsing or bypasses security controls. Instead the operator points the app at
+an **approved egress they run and are authorized to use** — a corporate VPN
+gateway, an authorized Tor/SOCKS egress, or an HTTP forward proxy — and the app
+can route its own *server-side outbound* requests through it.
+
+How it's wired:
+
+- **Config** ([`config/marketplace.config.ts`](config/marketplace.config.ts) →
+  `privacy.providers`) lists the approved provider slots. Each is **off by
+  default** and names the env var that supplies its endpoint.
+- **Env** — set `PRIVACY_VPN_PROXY_URL`, `PRIVACY_TOR_PROXY_URL`, or
+  `PRIVACY_HTTP_PROXY_URL` to an endpoint you operate. The value is never
+  committed and never rendered in the UI.
+- **Activation is opt-in twice**: an egress only goes *active* when the provider
+  is both `enabled` in config **and** its endpoint env var is set. Setting the
+  env alone shows "endpoint set / idle"; it does nothing until you enable it.
+- **Routing** — [`lib/privacy.ts`](lib/privacy.ts) exposes `outboundFetch()`,
+  which routes through the active egress using `undici`'s `ProxyAgent` for
+  HTTP/HTTPS proxies when that (optional, non-bundled) package is installed. For
+  SOCKS/Tor endpoints the operator supplies a SOCKS-capable dispatcher. With no
+  active egress it's a normal `fetch`.
+- **Dashboards** — `/privacy` gives customers a transparent view (connection
+  protection, encryption status, sensitive-data vault with masked values,
+  security logs, device monitoring, permissions). `/admin/privacy` lets
+  operators see egress-provider status, encryption/compliance settings, and the
+  security-event log.
+
+This keeps privacy/egress a **deployment and compliance decision**, configured
+by administrators, rather than a capability hardcoded into the application.
+
+---
+
 ## Environment variables
 
 See [`.env.example`](.env.example) for the full list. Everything is optional for
@@ -191,6 +227,8 @@ local development. Groups:
   `STRIPE_WEBHOOK_SECRET`
 - **Crypto** — `CRYPTO_WALLET_BTC` / `_ETH` / `_USDC` / `_USDT`
 - **Zelle** — `ZELLE_RECIPIENT_NAME` / `_EMAIL` / `_PHONE`
+- **Privacy egress** — `PRIVACY_VPN_PROXY_URL` / `PRIVACY_TOR_PROXY_URL` /
+  `PRIVACY_HTTP_PROXY_URL` (approved endpoints you operate)
 
 ---
 

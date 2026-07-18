@@ -1,6 +1,20 @@
-import type { Coupon, Order, Product, User } from "@/config/types";
+import type {
+  Coupon,
+  DeviceSession,
+  Order,
+  Product,
+  SecurityEvent,
+  User,
+} from "@/config/types";
 import * as airtable from "./airtable";
-import { mockCoupons, mockOrders, mockProducts, mockUsers } from "./mock";
+import {
+  mockCoupons,
+  mockDeviceSessions,
+  mockOrders,
+  mockProducts,
+  mockSecurityEvents,
+  mockUsers,
+} from "./mock";
 
 /**
  * Data-access facade.
@@ -107,6 +121,36 @@ export async function saveOrder(order: Order): Promise<void> {
       // Best effort — the order is still tracked in-memory for the session.
     }
   }
+}
+
+// -- Privacy / security telemetry --------------------------------------------
+
+export async function getSecurityEvents(): Promise<SecurityEvent[]> {
+  return [...mockSecurityEvents].sort(
+    (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
+  );
+}
+
+export async function getSecurityEventsForEmail(
+  email: string,
+): Promise<SecurityEvent[]> {
+  const events = await getSecurityEvents();
+  return events.filter(
+    (e) => e.userEmail.toLowerCase() === email.toLowerCase(),
+  );
+}
+
+export async function getDeviceSessions(): Promise<DeviceSession[]> {
+  return mockDeviceSessions;
+}
+
+export async function getDeviceSessionsForEmail(
+  email: string,
+): Promise<DeviceSession[]> {
+  const devices = await getDeviceSessions();
+  return devices.filter(
+    (d) => d.userEmail.toLowerCase() === email.toLowerCase(),
+  );
 }
 
 export function dataSource(): "airtable" | "in-memory" {

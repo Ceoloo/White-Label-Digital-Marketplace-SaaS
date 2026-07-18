@@ -1,4 +1,11 @@
-import type { Coupon, Order, Product, User } from "@/config/types";
+import type {
+  Coupon,
+  DeviceSession,
+  Order,
+  Product,
+  SecurityEvent,
+  User,
+} from "@/config/types";
 
 /**
  * Built-in demo data. This lets the entire application run, be developed, and
@@ -185,6 +192,66 @@ export const mockCoupons: Coupon[] = [
     expiresAt: "2026-01-01T00:00:00.000Z",
     usedCount: 5,
     active: false,
+  },
+];
+
+export const mockSecurityEvents: SecurityEvent[] = [
+  {
+    id: "evt_1",
+    userEmail: "demo@example.com",
+    event: "Successful sign-in",
+    level: "info",
+    device: "Chrome · macOS",
+    channel: "direct",
+    createdAt: "2026-07-18T09:14:00.000Z",
+  },
+  {
+    id: "evt_2",
+    userEmail: "demo@example.com",
+    event: "Password changed",
+    level: "info",
+    device: "Chrome · macOS",
+    channel: "direct",
+    createdAt: "2026-07-17T18:02:00.000Z",
+  },
+  {
+    id: "evt_3",
+    userEmail: "demo@example.com",
+    event: "New device signed in",
+    level: "warning",
+    device: "Safari · iPhone",
+    channel: "direct",
+    createdAt: "2026-07-16T21:40:00.000Z",
+  },
+  {
+    id: "evt_4",
+    userEmail: "demo@example.com",
+    event: "Blocked sign-in attempt (wrong 2FA)",
+    level: "critical",
+    device: "Unknown · Linux",
+    channel: "tor",
+    createdAt: "2026-07-15T03:11:00.000Z",
+  },
+];
+
+export const mockDeviceSessions: DeviceSession[] = [
+  {
+    id: "dev_1",
+    userEmail: "demo@example.com",
+    device: "Chrome · macOS",
+    location: "Austin, US",
+    lastActive: "2026-07-18T09:14:00.000Z",
+    trusted: true,
+    current: true,
+  },
+  {
+    id: "dev_2",
+    userEmail: "demo@example.com",
+    device: "Safari · iPhone",
+    location: "Austin, US",
+    lastActive: "2026-07-16T21:40:00.000Z",
+    trusted: true,
+    current: false,
   },
 ];
 

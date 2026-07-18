@@ -35,6 +35,7 @@ export const marketplaceConfig: MarketplaceConfig = {
     { label: "Rewards", href: "/rewards" },
     { label: "Downloads", href: "/downloads" },
     { label: "AI Services", href: "/ai-services" },
+    { label: "Privacy", href: "/privacy" },
     { label: "Support", href: "/support" },
   ],
 
@@ -43,6 +44,7 @@ export const marketplaceConfig: MarketplaceConfig = {
     { label: "Orders", href: "/admin/orders" },
     { label: "Products", href: "/admin/products" },
     { label: "Coupons", href: "/admin/coupons" },
+    { label: "Privacy", href: "/admin/privacy" },
     { label: "Settings", href: "/admin/settings" },
   ],
 
@@ -141,9 +143,57 @@ export const marketplaceConfig: MarketplaceConfig = {
     },
   ],
 
+  privacy: {
+    enabled: true,
+    // Approved egress providers. All are OFF by default — an operator turns one
+    // on only after pointing the matching env var at an endpoint they run and
+    // are authorized to use. The app routes its own server-side outbound
+    // requests through the active provider; it never proxies end-user browsing.
+    providers: [
+      {
+        id: "vpn-gateway",
+        label: "VPN egress gateway",
+        kind: "vpn",
+        description:
+          "Route the app's outbound server-to-server traffic through your corporate VPN or a dedicated egress gateway.",
+        enabled: false,
+        envVar: "PRIVACY_VPN_PROXY_URL",
+      },
+      {
+        id: "tor-egress",
+        label: "Tor / SOCKS egress",
+        kind: "tor",
+        description:
+          "Send privacy-sensitive outbound requests through an authorized Tor or SOCKS5 egress you operate. Bring your own vetted endpoint; nothing is bundled.",
+        enabled: false,
+        envVar: "PRIVACY_TOR_PROXY_URL",
+      },
+      {
+        id: "http-proxy",
+        label: "HTTP forward proxy",
+        kind: "proxy",
+        description:
+          "Use a standard authenticated HTTP/HTTPS forward proxy for compliance-scoped egress.",
+        enabled: false,
+        envVar: "PRIVACY_HTTP_PROXY_URL",
+      },
+    ],
+    encryption: { atRest: true, inTransit: true },
+    compliance: {
+      auditLogging: true,
+      dataRetentionDays: 90,
+      region: "US",
+    },
+    permissions: {
+      requireAdminApproval: true,
+      sessionTimeoutMinutes: 30,
+    },
+  },
+
   features: {
     rewards: true,
     aiServices: true,
+    privacy: true,
     wishlist: true,
     reviews: true,
     downloads: true,
