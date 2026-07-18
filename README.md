@@ -134,6 +134,30 @@ otherwise it uses the in-memory demo data. If a live call fails it falls back to
 demo data so the storefront stays up. This is the one place to change when
 migrating to Postgres or another store as usage grows.
 
+The mutable demo state (products + orders) is kept on `globalThis` so the React
+Server Components layer and the route-handler layer share **one** copy — without
+that, a product created via an API route would be invisible to server-rendered
+pages. State resets when the process restarts.
+
+### Admin product management (CRUD)
+
+Admins manage the catalog from **`/admin/products`** — create, edit, and delete
+products through a form (name, slug, description, category, price, sale price,
+inventory, visibility, download/video URLs, images, features, requirements).
+Changes are reflected immediately in the storefront so clients can shop them.
+
+- **API** — `POST /api/admin/products` (create), `PATCH`/`DELETE
+  /api/admin/products/[id]` (update/delete), `GET` (list all visibilities).
+  Validation and slug-uniqueness are enforced server-side
+  ([`lib/products.ts`](lib/products.ts)).
+- **Auth seam** — when `ADMIN_API_TOKEN` is set, these endpoints require a
+  matching `x-admin-token` header (the admin UI stores it locally and sends it);
+  unset means demo mode. Put real session/role auth in front of `/admin` before
+  going live ([`lib/admin-auth.ts`](lib/admin-auth.ts)).
+- **Inventory** — `-1` is unlimited; a finite count shows "only N left", hits
+  "Sold out" at `0` (add-to-cart/buy disabled, checkout rejects it), and is
+  drawn down on each sale.
+
 ### Airtable schema
 
 Tables (names overridable via env) follow the MVP scope:

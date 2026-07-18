@@ -27,6 +27,25 @@ import {
 
 const useAirtable = airtable.isAirtableConfigured();
 
+/**
+ * The mutable demo state (products + orders) is stashed on `globalThis` so every
+ * module instance shares ONE copy. Next can load this module separately in the
+ * React Server Components layer and the route-handler layer; without this, a
+ * product created via an API route would be invisible to server-rendered pages.
+ * Seeded once from the demo data; resets when the process restarts.
+ */
+interface MutableState {
+  products: Product[];
+  orders: Order[];
+}
+const globalForStore = globalThis as unknown as { __wlStore?: MutableState };
+const state: MutableState =
+  globalForStore.__wlStore ??
+  (globalForStore.__wlStore = {
+    products: [...mockProducts],
+    orders: [...mockOrders],
+  });
+
 // -- Products -----------------------------------------------------------------
 
 export async function getProducts(): Promise<Product[]> {
@@ -35,10 +54,10 @@ export async function getProducts(): Promise<Product[]> {
       return await airtable.fetchProducts();
     } catch {
       // Fall back to demo data if the live call fails, so the store stays up.
-      return mockProducts;
+      return state.products;
     }
   }
-  return mockProducts;
+  return state.products;
 }
 
 export async function getPublicProducts(): Promise<Product[]> {
@@ -54,6 +73,66 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 export async function getProductById(id: string): Promise<Product | null> {
   const all = await getProducts();
   return all.find((p) => p.id === id) ?? null;
+}
+
+export async function getProductBySlugExcluding(
+  slug: string,
+  excludeId?: string,
+): Promise<Product | null> {
+  const all = await getProducts();
+  return all.find((p) => p.slug === slug && p.id !== excludeId) ?? null;
+}
+
+// -- Product mutations (admin CRUD) -------------------------------------------
+
+export async function createProduct(product: Product): Promise<Product> {
+  if (useAirtable) {
+    const created = await airtable.createProduct(product);
+    return created;
+  }
+  state.products.unshift(product);
+  return product;
+}
+
+export async function updateProduct(product: Product): Promise<Product> {
+  if (useAirtable) {
+    await airtable.updateProduct(product.id, product);
+    return product;
+  }
+  const idx = state.products.findIndex((p) => p.id === product.id);
+  if (idx >= 0) state.products[idx] = product;
+  return product;
+}
+
+export async function deleteProduct(id: string): Promise<boolean> {
+  if (useAirtable) {
+    return airtable.deleteProduct(id);
+  }
+  const idx = state.products.findIndex((p) => p.id === id);
+  if (idx < 0) return false;
+  state.products.splice(idx, 1);
+  return true;
+}
+
+/**
+ * Decrement finite inventory after a sale. Unlimited stock (-1) is untouched.
+ * Best-effort against Airtable; always applied in the in-memory store.
+ */
+export async function decrementInventory(id: string, qty: number): Promise<void> {
+  const product = await getProductById(id);
+  if (!product || product.inventory < 0) return;
+  const next = Math.max(0, product.inventory - Math.max(0, qty));
+  const updated = { ...product, inventory: next };
+  if (useAirtable) {
+    try {
+      await airtable.updateProduct(id, updated);
+    } catch {
+      /* best effort */
+    }
+    return;
+  }
+  const idx = state.products.findIndex((p) => p.id === id);
+  if (idx >= 0) state.products[idx] = updated;
 }
 
 // -- Coupons ------------------------------------------------------------------
@@ -104,7 +183,7 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function getOrders(): Promise<Order[]> {
   // Orders are always tracked in-memory for the demo; when Airtable is
   // configured, new orders are additionally written through (best effort).
-  return mockOrders;
+  return state.orders;
 }
 
 export async function getOrdersForEmail(email: string): Promise<Order[]> {
@@ -113,7 +192,7 @@ export async function getOrdersForEmail(email: string): Promise<Order[]> {
 }
 
 export async function saveOrder(order: Order): Promise<void> {
-  mockOrders.unshift(order);
+  state.orders.unshift(order);
   if (useAirtable) {
     try {
       await airtable.createOrder(order);

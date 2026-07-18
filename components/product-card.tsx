@@ -16,6 +16,8 @@ export function ProductCard({ product }: { product: Product }) {
   const discountPct = onSale
     ? Math.round((1 - price / product.price) * 100)
     : 0;
+  const soldOut = product.inventory === 0;
+  const lowStock = product.inventory > 0 && product.inventory <= 5;
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md">
@@ -33,9 +35,14 @@ export function ProductCard({ product }: { product: Product }) {
               {product.name.charAt(0)}
             </span>
           )}
-          {marketplaceConfig.promotions.showSaleBadges && onSale && (
+          {marketplaceConfig.promotions.showSaleBadges && onSale && !soldOut && (
             <Badge variant="sale" className="absolute left-3 top-3">
               {discountPct}% off
+            </Badge>
+          )}
+          {soldOut && (
+            <Badge variant="muted" className="absolute left-3 top-3">
+              Sold out
             </Badge>
           )}
         </div>
@@ -59,6 +66,12 @@ export function ProductCard({ product }: { product: Product }) {
           {product.description}
         </p>
 
+        {lowStock && (
+          <p className="mt-2 text-xs font-medium text-amber-600">
+            Only {product.inventory} left
+          </p>
+        )}
+
         <div className="mt-4 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-semibold">{formatUsd(price)}</span>
@@ -68,8 +81,12 @@ export function ProductCard({ product }: { product: Product }) {
               </span>
             )}
           </div>
-          <Button size="sm" onClick={() => add(toCartLine(product))}>
-            Add
+          <Button
+            size="sm"
+            disabled={soldOut}
+            onClick={() => add(toCartLine(product))}
+          >
+            {soldOut ? "Sold out" : "Add"}
           </Button>
         </div>
       </div>

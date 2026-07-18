@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Order, OrderItem, PaymentMethodId } from "@/config/types";
 import marketplaceConfig from "@/config/marketplace.config";
 import {
+  decrementInventory,
   getCouponByCode,
   getProductById,
   getUserByEmail,
@@ -58,12 +59,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
   }
 
-  // Re-price server-side from the catalog.
+  // Re-price server-side from the catalog and enforce stock.
   const orderItems: OrderItem[] = [];
   for (const line of items) {
     const product = await getProductById(line.productId);
     if (!product || product.visibility !== "public") continue;
-    const qty = Math.max(1, Math.floor(Number(line.quantity) || 1));
+    // inventory: -1 = unlimited; 0 = sold out (skip); N = cap the quantity.
+    if (product.inventory === 0) continue;
+    let qty = Math.max(1, Math.floor(Number(line.quantity) || 1));
+    if (product.inventory > 0) qty = Math.min(qty, product.inventory);
     const price =
       product.salePrice && product.salePrice > 0 && product.salePrice < product.price
         ? product.salePrice
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
 
   if (orderItems.length === 0) {
     return NextResponse.json(
-      { error: "None of the cart items are available." },
+      { error: "None of the cart items are available or in stock." },
       { status: 400 },
     );
   }
@@ -131,6 +135,11 @@ export async function POST(req: Request) {
   order.deliveryStatus = paymentStatus === "paid" ? "delivered" : "pending";
 
   await saveOrder(order);
+
+  // Draw down finite inventory for the purchased items.
+  for (const item of orderItems) {
+    await decrementInventory(item.productId, item.quantity);
+  }
 
   const xpEarned = marketplaceConfig.rewards.enabled
     ? xpForSpend(total, isFirstPurchase)

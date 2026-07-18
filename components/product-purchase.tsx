@@ -17,6 +17,8 @@ export function ProductPurchase({ product }: { product: Product }) {
 
   const price = effectivePrice(product.price, product.salePrice);
   const onSale = price < product.price;
+  const soldOut = product.inventory === 0;
+  const lowStock = product.inventory > 0 && product.inventory <= 5;
 
   const handleAdd = () => {
     add(toCartLine(product));
@@ -43,12 +45,28 @@ export function ProductPurchase({ product }: { product: Product }) {
         )}
       </div>
 
+      {soldOut ? (
+        <p className="mt-3 text-sm font-medium text-destructive">
+          Currently sold out.
+        </p>
+      ) : lowStock ? (
+        <p className="mt-3 text-sm font-medium text-amber-600">
+          Only {product.inventory} left in stock.
+        </p>
+      ) : null}
+
       <div className="mt-6 flex flex-col gap-3">
-        <Button size="lg" onClick={handleBuyNow}>
-          Buy now
+        <Button size="lg" onClick={handleBuyNow} disabled={soldOut}>
+          {soldOut ? "Sold out" : "Buy now"}
         </Button>
         <div className="flex gap-3">
-          <Button variant="outline" size="lg" className="flex-1" onClick={handleAdd}>
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1"
+            onClick={handleAdd}
+            disabled={soldOut}
+          >
             {added ? (
               <>
                 <Check className="size-4" /> Added

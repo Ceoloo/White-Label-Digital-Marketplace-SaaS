@@ -142,6 +142,69 @@ export async function fetchUsers(): Promise<User[]> {
   return recs.map(toUser);
 }
 
+// --- Product writes ----------------------------------------------------------
+
+/** Map a domain Product to Airtable fields (reverse of `toProduct`). */
+function productFields(product: Product): Record<string, unknown> {
+  return {
+    "Product Name": product.name,
+    Slug: product.slug,
+    Description: product.description,
+    Features: product.features.join("\n"),
+    Requirements: product.requirements.join("\n"),
+    Price: product.price,
+    "Sale Price": product.salePrice ?? null,
+    Category: product.category,
+    "Download URL": product.downloadUrl ?? "",
+    Visibility: product.visibility,
+    Inventory: product.inventory,
+  };
+}
+
+function productsUrl(): string {
+  const baseId = process.env.AIRTABLE_BASE_ID!;
+  const table = tableName("AIRTABLE_TABLE_PRODUCTS", "Products");
+  return `${API_BASE}/${baseId}/${encodeURIComponent(table)}`;
+}
+
+function authHeaders(): Record<string, string> {
+  return {
+    Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}`,
+    "Content-Type": "application/json",
+  };
+}
+
+/** Create a product record; returns the mapped Product (with Airtable id). */
+export async function createProduct(product: Product): Promise<Product> {
+  const res = await fetch(productsUrl(), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ fields: productFields(product) }),
+  });
+  if (!res.ok) throw new Error(`Airtable create product failed: ${res.status}`);
+  const rec = (await res.json()) as { id: string };
+  return { ...product, id: rec.id };
+}
+
+/** Update an existing product record by Airtable id. */
+export async function updateProduct(id: string, product: Product): Promise<boolean> {
+  const res = await fetch(`${productsUrl()}/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ fields: productFields(product) }),
+  });
+  return res.ok;
+}
+
+/** Delete a product record by Airtable id. */
+export async function deleteProduct(id: string): Promise<boolean> {
+  const res = await fetch(`${productsUrl()}/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` },
+  });
+  return res.ok;
+}
+
 /**
  * Create an order record. Returns true when written. Writing is best-effort in
  * the MVP — the app always keeps the order in its own response regardless.
