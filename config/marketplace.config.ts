@@ -44,6 +44,7 @@ export const marketplaceConfig: MarketplaceConfig = {
     { label: "Dashboard", href: "/admin" },
     { label: "Orders", href: "/admin/orders" },
     { label: "Products", href: "/admin/products" },
+    { label: "AI Services", href: "/admin/services" },
     { label: "Coupons", href: "/admin/coupons" },
     { label: "Privacy", href: "/admin/privacy" },
     { label: "Settings", href: "/admin/settings" },
